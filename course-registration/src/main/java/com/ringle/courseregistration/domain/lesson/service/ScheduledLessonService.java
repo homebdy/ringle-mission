@@ -1,6 +1,7 @@
 package com.ringle.courseregistration.domain.lesson.service;
 
 import com.ringle.courseregistration.domain.lesson.constant.LessonConstant;
+import com.ringle.courseregistration.domain.lesson.controller.dto.response.ScheduledLessonFindResponse;
 import com.ringle.courseregistration.domain.lesson.entity.LessonSlot;
 import com.ringle.courseregistration.domain.lesson.entity.ScheduledLesson;
 import com.ringle.courseregistration.domain.lesson.entity.TimeUnit;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -88,5 +90,13 @@ public class ScheduledLessonService {
             ScheduledLesson scheduledLesson = scheduledLessonMapper.toScheduledLesson(slot, student);
             scheduledLessonRepository.save(scheduledLesson);
         });
+    }
+
+    @Transactional
+    public Collection<ScheduledLessonFindResponse> findByMemberId(Long memberId) {
+        Student student = findStudent(memberId);
+        return scheduledLessonRepository.findByStudentId(student.getId()).stream()
+                .map(scheduledLessonMapper::toScheduledLessonFindResponse)
+                .toList();
     }
 }
