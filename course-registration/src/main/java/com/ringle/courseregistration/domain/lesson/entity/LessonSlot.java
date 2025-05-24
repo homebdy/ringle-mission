@@ -58,4 +58,12 @@ public class LessonSlot {
     public LocalTime getStartTime() {
         return timeUnit.getStartAt();
     }
+
+    public void register() {
+        this.isAvailable = true;
+    }
+
+    public boolean isRegistered() {
+        return isAvailable;
+    }
 }
