@@ -2,8 +2,21 @@ spring:
   application:
     name: course-registration
 
+  data:
+    rest:
+      base-path: /api
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/ringle
     username: root
     password: 1234
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
