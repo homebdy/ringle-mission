@@ -1,13 +1,17 @@
 package com.ringle.courseregistration.domain.lesson.controller;
 
 import com.ringle.courseregistration.domain.lesson.controller.dto.request.LessonSlotCreateRequest;
+import com.ringle.courseregistration.domain.lesson.controller.dto.request.TimeUnitFindRequest;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.LessonSlotCreateResponse;
+import com.ringle.courseregistration.domain.lesson.controller.dto.response.TimeUnitFindResponse;
 import com.ringle.courseregistration.domain.lesson.service.LessonSlotService;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateDto;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteDto;
+import com.ringle.courseregistration.domain.lesson.service.dto.TimeUnitFindDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,6 +45,17 @@ public class LessonSlotController {
     public void delete(Long memberId, @PathVariable Long lessonSlotId) {
         lessonSlotService.delete(
                 new LessonSlotDeleteDto(memberId, lessonSlotId)
+        );
+    }
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public TimeUnitFindResponse findTimeUnitByDateAndLessonLength(@RequestBody TimeUnitFindRequest request) {
+        return lessonSlotService.findTimeUnitByDateAndLessonLength(
+                new TimeUnitFindDto(
+                        request.date(),
+                        request.duration()
+                )
         );
     }
 }

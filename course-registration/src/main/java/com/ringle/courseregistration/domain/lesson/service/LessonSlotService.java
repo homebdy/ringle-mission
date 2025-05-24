@@ -1,6 +1,9 @@
 package com.ringle.courseregistration.domain.lesson.service;
 
+import com.ringle.courseregistration.domain.lesson.constant.LessonConstant;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.LessonSlotCreateResponse;
+import com.ringle.courseregistration.domain.lesson.controller.dto.response.TimeUnitFindResponse;
+import com.ringle.courseregistration.domain.lesson.entity.Duration;
 import com.ringle.courseregistration.domain.lesson.entity.LessonSlot;
 import com.ringle.courseregistration.domain.lesson.entity.TimeUnit;
 import com.ringle.courseregistration.domain.lesson.exception.InvalidDateException;
@@ -12,6 +15,7 @@ import com.ringle.courseregistration.domain.lesson.repository.LessonSlotReposito
 import com.ringle.courseregistration.domain.lesson.repository.TimeUnitRepository;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateDto;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteDto;
+import com.ringle.courseregistration.domain.lesson.service.dto.TimeUnitFindDto;
 import com.ringle.courseregistration.domain.tutor.entity.Tutor;
 import com.ringle.courseregistration.domain.tutor.exception.TutorNotFoundException;
 import com.ringle.courseregistration.domain.tutor.repository.TutorRepository;
@@ -22,7 +26,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -85,5 +96,45 @@ public class LessonSlotService {
         if (!slot.isSameTutor(tutor)) {
             throw new ForbiddenException();
         }
+    }
+
+    @Transactional(readOnly = true)
+    public TimeUnitFindResponse findTimeUnitByDateAndLessonLength(final TimeUnitFindDto dto) {
+        List<LessonSlot> allSlots = lessonSlotRepository.findByDate(dto.date());
+        Map<Tutor, List<LessonSlot>> slotsByTutor = allSlots.stream()
+                .collect(Collectors.groupingBy(LessonSlot::getTutor));
+
+        Set<TimeUnit> result = new HashSet<>();
+        for (Tutor tutor : slotsByTutor.keySet()) {
+            List<LessonSlot> sorted = slotsByTutor.get(tutor).stream()
+                    .sorted(Comparator.comparing(ls -> ls.getTimeUnit().getStartAt()))
+                    .toList();
+
+            if (dto.duration().equals(Duration.MINUTES_30)) {
+                result.addAll(getTimeUnitsFor30MinuteLesson(sorted));
+                continue;
+            }
+            result.addAll(getTimeUnitsFor60MinuteLesson(sorted));
+        }
+        return new TimeUnitFindResponse(dto.date(), result.stream().map(TimeUnit::getStartAt).toList());
+    }
+
+    private Collection<TimeUnit> getTimeUnitsFor30MinuteLesson(List<LessonSlot> sortedSlots) {
+        return sortedSlots.stream()
+                .map(LessonSlot::getTimeUnit)
+                .toList();
+    }
+
+    private Collection<TimeUnit> getTimeUnitsFor60MinuteLesson(List<LessonSlot> sortedSlots) {
+        List<TimeUnit> result = new ArrayList<>();
+        for (int i = 0; i < sortedSlots.size() - 1; i++) {
+            LessonSlot current = sortedSlots.get(i);
+            LessonSlot next = sortedSlots.get(i + 1);
+
+            if (current.getTimeUnit().getStartAt().plusMinutes(LessonConstant.LESSON_LENGTH).equals(next.getTimeUnit().getStartAt())) {
+                result.add(current.getTimeUnit());
+            }
+        }
+        return result;
     }
 }
