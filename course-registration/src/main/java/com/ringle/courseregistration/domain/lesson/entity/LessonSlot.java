@@ -10,12 +10,15 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLDelete(sql = "UPDATE lesson_slot SET delete_at = true WHERE id = ?")
 public class LessonSlot {
 
     @Id
@@ -32,6 +35,8 @@ public class LessonSlot {
 
     private boolean isAvailable;
 
+    private LocalDateTime deleteAt;
+
     @Builder
     public LessonSlot(Long id, LocalDate date, TimeUnit timeUnit, Tutor tutor, boolean isAvailable) {
         this.id = id;
@@ -39,5 +44,13 @@ public class LessonSlot {
         this.timeUnit = timeUnit;
         this.tutor = tutor;
         this.isAvailable = isAvailable;
+    }
+
+    public boolean isSameTutor(Tutor tutor) {
+        return this.tutor.equals(tutor);
+    }
+
+    public void delete() {
+        this.deleteAt = LocalDateTime.now();
     }
 }

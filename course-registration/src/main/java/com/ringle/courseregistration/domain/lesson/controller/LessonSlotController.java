@@ -4,8 +4,11 @@ import com.ringle.courseregistration.domain.lesson.controller.dto.request.Lesson
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.LessonSlotCreateResponse;
 import com.ringle.courseregistration.domain.lesson.service.LessonSlotService;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateDto;
+import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +32,15 @@ public class LessonSlotController {
                         memberId,
                         request
                 )
+        );
+    }
+
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.OK)
+    @RequestMapping("/{lessonSlotId}")
+    public void delete(Long memberId, @PathVariable Long lessonSlotId) {
+        lessonSlotService.delete(
+                new LessonSlotDeleteDto(memberId, lessonSlotId)
         );
     }
 }
