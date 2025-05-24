@@ -3,6 +3,8 @@ package com.ringle.courseregistration.domain.lesson.service;
 import com.ringle.courseregistration.domain.lesson.constant.LessonConstant;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.LessonSlotCreateResponse;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.TimeUnitFindResponse;
+import com.ringle.courseregistration.domain.lesson.controller.dto.response.TutorFindResponse;
+import com.ringle.courseregistration.domain.lesson.controller.dto.response.TutorTimeUnitResponse;
 import com.ringle.courseregistration.domain.lesson.entity.Duration;
 import com.ringle.courseregistration.domain.lesson.entity.LessonSlot;
 import com.ringle.courseregistration.domain.lesson.entity.TimeUnit;
@@ -16,6 +18,7 @@ import com.ringle.courseregistration.domain.lesson.repository.TimeUnitRepository
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateDto;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteDto;
 import com.ringle.courseregistration.domain.lesson.service.dto.TimeUnitFindDto;
+import com.ringle.courseregistration.domain.lesson.service.dto.TutorFindDto;
 import com.ringle.courseregistration.domain.tutor.entity.Tutor;
 import com.ringle.courseregistration.domain.tutor.exception.TutorNotFoundException;
 import com.ringle.courseregistration.domain.tutor.repository.TutorRepository;
@@ -104,7 +107,7 @@ public class LessonSlotService {
         Map<Tutor, List<LessonSlot>> slotsByTutor = allSlots.stream()
                 .collect(Collectors.groupingBy(LessonSlot::getTutor));
 
-        Set<TimeUnit> result = new HashSet<>();
+        Set<LocalTime> result = new HashSet<>();
         for (Tutor tutor : slotsByTutor.keySet()) {
             List<LessonSlot> sorted = slotsByTutor.get(tutor).stream()
                     .sorted(Comparator.comparing(ls -> ls.getTimeUnit().getStartAt()))
@@ -116,25 +119,70 @@ public class LessonSlotService {
             }
             result.addAll(getTimeUnitsFor60MinuteLesson(sorted));
         }
-        return new TimeUnitFindResponse(dto.date(), result.stream().map(TimeUnit::getStartAt).toList());
+        return new TimeUnitFindResponse(dto.date(), result);
     }
 
-    private Collection<TimeUnit> getTimeUnitsFor30MinuteLesson(List<LessonSlot> sortedSlots) {
+    private Collection<LocalTime> getTimeUnitsFor30MinuteLesson(List<LessonSlot> sortedSlots) {
         return sortedSlots.stream()
                 .map(LessonSlot::getTimeUnit)
+                .map(TimeUnit::getStartAt)
                 .toList();
     }
 
-    private Collection<TimeUnit> getTimeUnitsFor60MinuteLesson(List<LessonSlot> sortedSlots) {
-        List<TimeUnit> result = new ArrayList<>();
+    private Collection<LocalTime> getTimeUnitsFor60MinuteLesson(List<LessonSlot> sortedSlots) {
+        List<TimeUnit> results = new ArrayList<>();
         for (int i = 0; i < sortedSlots.size() - 1; i++) {
             LessonSlot current = sortedSlots.get(i);
             LessonSlot next = sortedSlots.get(i + 1);
 
             if (current.getTimeUnit().getStartAt().plusMinutes(LessonConstant.LESSON_LENGTH).equals(next.getTimeUnit().getStartAt())) {
-                result.add(current.getTimeUnit());
+                results.add(current.getTimeUnit());
             }
         }
-        return result;
+        return results.stream()
+                .map(TimeUnit::getStartAt)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TutorFindResponse findTutorByTimeAndDuration(final TutorFindDto dto) {
+        List<LessonSlot> allSlots = lessonSlotRepository.findByDate(dto.date());
+        Map<Tutor, List<LessonSlot>> slotsByTutor = allSlots.stream()
+                .collect(Collectors.groupingBy(LessonSlot::getTutor));
+
+        List<TutorTimeUnitResponse> timeUnitResponses = slotsByTutor.entrySet().stream()
+                .map(entry -> createTutorTimeUnitResponse(entry.getKey(), entry.getValue(), dto))
+                .toList();
+
+        return new TutorFindResponse(dto.date(), timeUnitResponses);
+    }
+
+    private TutorTimeUnitResponse createTutorTimeUnitResponse(Tutor tutor, List<LessonSlot> slots, TutorFindDto dto) {
+        List<LessonSlot> filteredSlots = filterSlotsByTimeRange(slots, dto);
+        Set<LocalTime> availableTimes = getAvailableTimes(filteredSlots, dto.duration());
+        
+        return new TutorTimeUnitResponse(
+                tutor.getId(),
+                tutor.getMember().getName(),
+                availableTimes
+        );
+    }
+
+    private List<LessonSlot> filterSlotsByTimeRange(List<LessonSlot> slots, TutorFindDto dto) {
+        LocalTime startTime = dto.startAt().minusMinutes(dto.duration().getLessonLength()).minusMinutes(1);
+        LocalTime endTime = dto.startAt().plusMinutes(dto.duration().getLessonLength()).plusMinutes(1);
+
+        return slots.stream()
+                .filter(slot -> slot.getStartTime().isAfter(startTime) && 
+                        slot.getStartTime().isBefore(endTime))
+                .sorted(Comparator.comparing(ls -> ls.getTimeUnit().getStartAt()))
+                .toList();
+    }
+
+    private Set<LocalTime> getAvailableTimes(List<LessonSlot> slots, Duration duration) {
+        if (duration.equals(Duration.MINUTES_30)) {
+            return new HashSet<>(getTimeUnitsFor30MinuteLesson(slots));
+        }
+        return new HashSet<>(getTimeUnitsFor60MinuteLesson(slots));
     }
 }

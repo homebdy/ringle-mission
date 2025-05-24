@@ -21,5 +21,5 @@ public class TimeUnit {
     private Long id;
 
     @Column(nullable = false)
-    LocalTime startAt;
+    private LocalTime startAt;
 }

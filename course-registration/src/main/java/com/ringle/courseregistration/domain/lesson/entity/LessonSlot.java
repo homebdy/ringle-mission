@@ -14,6 +14,7 @@ import org.hibernate.annotations.SQLDelete;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Getter
@@ -52,5 +53,9 @@ public class LessonSlot {
 
     public void delete() {
         this.deleteAt = LocalDateTime.now();
+    }
+
+    public LocalTime getStartTime() {
+        return timeUnit.getStartAt();
     }
 }

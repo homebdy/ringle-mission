@@ -2,12 +2,15 @@ package com.ringle.courseregistration.domain.lesson.controller;
 
 import com.ringle.courseregistration.domain.lesson.controller.dto.request.LessonSlotCreateRequest;
 import com.ringle.courseregistration.domain.lesson.controller.dto.request.TimeUnitFindRequest;
+import com.ringle.courseregistration.domain.lesson.controller.dto.request.TutorFindRequest;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.LessonSlotCreateResponse;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.TimeUnitFindResponse;
+import com.ringle.courseregistration.domain.lesson.controller.dto.response.TutorFindResponse;
 import com.ringle.courseregistration.domain.lesson.service.LessonSlotService;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateDto;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteDto;
 import com.ringle.courseregistration.domain.lesson.service.dto.TimeUnitFindDto;
+import com.ringle.courseregistration.domain.lesson.service.dto.TutorFindDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -50,10 +53,24 @@ public class LessonSlotController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
+    @RequestMapping
     public TimeUnitFindResponse findTimeUnitByDateAndLessonLength(@RequestBody TimeUnitFindRequest request) {
         return lessonSlotService.findTimeUnitByDateAndLessonLength(
                 new TimeUnitFindDto(
                         request.date(),
+                        request.duration()
+                )
+        );
+    }
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    @RequestMapping("/tutors")
+    public TutorFindResponse findTutorByTimeAndDuration(@RequestBody TutorFindRequest request) {
+        return lessonSlotService.findTutorByTimeAndDuration(
+                new TutorFindDto(
+                        request.date(),
+                        request.startAt(),
                         request.duration()
                 )
         );
