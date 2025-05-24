@@ -1,10 +1,10 @@
+server:
+  servlet:
+    context-path: /api
+
 spring:
   application:
     name: course-registration
-
-  data:
-    rest:
-      base-path: /api
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -20,3 +20,10 @@ spring:
       hibernate:
         format_sql: true
         show_sql: true
+
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:db/mysql/data.sql
