@@ -2,6 +2,7 @@ package com.ringle.courseregistration.domain.lesson.controller;
 
 import com.ringle.courseregistration.domain.lesson.controller.dto.request.ScheduledLessonCreateRequest;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.ScheduledLessonFindResponse;
+import com.ringle.courseregistration.domain.lesson.controller.specification.ScheduledLessonApiSpecification;
 import com.ringle.courseregistration.domain.lesson.service.ScheduledLessonService;
 import com.ringle.courseregistration.domain.lesson.service.dto.ScheduleLessonCreateDto;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/scheduled-lessons")
-public class ScheduledLessonController {
+public class ScheduledLessonController implements ScheduledLessonApiSpecification {
 
     private final ScheduledLessonService scheduledLessonService;
 

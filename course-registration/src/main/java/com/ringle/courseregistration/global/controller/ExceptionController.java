@@ -1,10 +1,10 @@
 package com.ringle.courseregistration.global.controller;
 
 import com.ringle.courseregistration.global.dto.ExceptionResponse;
+import com.ringle.courseregistration.global.exception.BadRequestException;
 import com.ringle.courseregistration.global.exception.DataExistException;
 import com.ringle.courseregistration.global.exception.DataNotFoundException;
 import com.ringle.courseregistration.global.exception.ForbiddenException;
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;

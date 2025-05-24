@@ -2,6 +2,7 @@ package com.ringle.courseregistration.domain.member.controller;
 
 import com.ringle.courseregistration.domain.member.controller.dto.request.MemberCreateRequest;
 import com.ringle.courseregistration.domain.member.controller.dto.response.MemberCreateResponse;
+import com.ringle.courseregistration.domain.member.controller.specification.MemberApiSpecification;
 import com.ringle.courseregistration.domain.member.service.MemberService;
 import com.ringle.courseregistration.domain.member.service.dto.MemberCreateDto;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/members")
-public class MemberController {
+public class MemberController implements MemberApiSpecification {
 
     private final MemberService memberService;
 

@@ -6,6 +6,7 @@ import com.ringle.courseregistration.domain.lesson.controller.dto.request.TutorF
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.LessonSlotCreateResponse;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.TimeUnitFindResponse;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.TutorFindResponse;
+import com.ringle.courseregistration.domain.lesson.controller.specification.LessonSlotApiSpecification;
 import com.ringle.courseregistration.domain.lesson.service.LessonSlotService;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateDto;
 import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteDto;
@@ -27,7 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/slots")
-public class LessonSlotController {
+public class LessonSlotController implements LessonSlotApiSpecification {
 
     private final LessonSlotService lessonSlotService;
 
@@ -42,9 +43,8 @@ public class LessonSlotController {
         );
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{lessonSlotId}")
     @ResponseStatus(HttpStatus.OK)
-    @RequestMapping("/{lessonSlotId}")
     public void delete(Long memberId, @PathVariable Long lessonSlotId) {
         lessonSlotService.delete(
                 new LessonSlotDeleteDto(memberId, lessonSlotId)
@@ -53,7 +53,6 @@ public class LessonSlotController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    @RequestMapping
     public TimeUnitFindResponse findTimeUnitByDateAndLessonLength(@RequestBody TimeUnitFindRequest request) {
         return lessonSlotService.findTimeUnitByDateAndLessonLength(
                 new TimeUnitFindDto(
@@ -63,9 +62,8 @@ public class LessonSlotController {
         );
     }
 
-    @GetMapping
+    @GetMapping("/tutors")
     @ResponseStatus(HttpStatus.OK)
-    @RequestMapping("/tutors")
     public TutorFindResponse findTutorByTimeAndDuration(@RequestBody TutorFindRequest request) {
         return lessonSlotService.findTutorByTimeAndDuration(
                 new TutorFindDto(
