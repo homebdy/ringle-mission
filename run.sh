@@ -2,8 +2,8 @@
 set -e
 
 echo "1. Docker Compose"
-docker-compose up -d
-
+docker-compose up -d --wait
+#sleep 5
 
 echo "2. Spring Boot 애플리케이션 실행형 JAR 빌드"
 ./gradlew bootJar -x test
