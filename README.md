@@ -39,7 +39,8 @@ Java 17, Spring Boot 3.5.0, MySQL, Docker, Swagger, JPA
 
 ### 도메인 설계
 
-(이미지)
+![image](https://github.com/user-attachments/assets/1b0d7cef-d375-405a-8f99-1d82e852013e)
+
 
 **Member**
 
@@ -74,7 +75,7 @@ Java 17, Spring Boot 3.5.0, MySQL, Docker, Swagger, JPA
 - 수업 조회 시, 비즈니스 로직에서 저장된 수업 중 연속된 시간대가 존재하는지 확인하도록 구현
 - 결과: 수업 시간의 단위가 변경되더라도 비즈니스 로직의 수정은 최소화 가능
 
-**2. 동시성 이슈**
+**2. 동시성**
 
 - 학생이 동일 시간대에 수업을 예약할 경우 동시성 문제 발생 가능 예상
 - 하지만, 낮은 빈도로 발생할 것이라 예상 → 낙관적 락 적용
@@ -112,7 +113,7 @@ Java 17, Spring Boot 3.5.0, MySQL, Docker, Swagger, JPA
     ```json
     {
       "name": "tutor",
-      "role": "TUTER"
+      "role": "TUTOR"
     }
     ```
 
@@ -127,8 +128,8 @@ Java 17, Spring Boot 3.5.0, MySQL, Docker, Swagger, JPA
 
     ```
     {
-      "name": string,
-      "role": MINUTES_30 | MINUTES_60
+      "date": LocalDate,
+      "lessonInterval": MINUTES_30 | MINUTES_60
     }
     ```
 
