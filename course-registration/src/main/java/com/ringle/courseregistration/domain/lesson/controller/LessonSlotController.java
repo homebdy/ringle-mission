@@ -8,18 +8,20 @@ import com.ringle.courseregistration.domain.lesson.controller.dto.response.TimeU
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.TutorFindResponse;
 import com.ringle.courseregistration.domain.lesson.controller.specification.LessonSlotApiSpecification;
 import com.ringle.courseregistration.domain.lesson.service.LessonSlotService;
-import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateDto;
-import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteDto;
-import com.ringle.courseregistration.domain.lesson.service.dto.TimeUnitFindDto;
-import com.ringle.courseregistration.domain.lesson.service.dto.TutorFindDto;
+import com.ringle.courseregistration.domain.lesson.service.dto.AvailableTimeFindCommand;
+import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateCommand;
+import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteCommand;
+import com.ringle.courseregistration.domain.lesson.service.dto.TutorFindCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,9 +36,12 @@ public class LessonSlotController implements LessonSlotApiSpecification {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public List<LessonSlotCreateResponse> save(Long memberId, @RequestBody List<LessonSlotCreateRequest> request) {
+    public List<LessonSlotCreateResponse> save(
+            @RequestParam Long memberId,
+            @RequestBody List<LessonSlotCreateRequest> request
+    ) {
         return lessonSlotService.save(
-                new LessonSlotCreateDto(
+                new LessonSlotCreateCommand(
                         memberId,
                         request
                 )
@@ -45,31 +50,30 @@ public class LessonSlotController implements LessonSlotApiSpecification {
 
     @DeleteMapping("/{lessonSlotId}")
     @ResponseStatus(HttpStatus.OK)
-    public void delete(Long memberId, @PathVariable Long lessonSlotId) {
+    public void delete(@RequestParam Long memberId, @PathVariable Long lessonSlotId) {
         lessonSlotService.delete(
-                new LessonSlotDeleteDto(memberId, lessonSlotId)
+                new LessonSlotDeleteCommand(memberId, lessonSlotId)
         );
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public TimeUnitFindResponse findTimeUnitByDateAndLessonLength(@RequestBody TimeUnitFindRequest request) {
+    public TimeUnitFindResponse findTimeUnitByDateAndLessonLength(@ModelAttribute TimeUnitFindRequest request) {
         return lessonSlotService.findTimeUnitByDateAndLessonLength(
-                new TimeUnitFindDto(
+                new AvailableTimeFindCommand(
                         request.date(),
-                        request.duration()
+                        request.lessonInterval()
                 )
         );
     }
 
     @GetMapping("/tutors")
     @ResponseStatus(HttpStatus.OK)
-    public TutorFindResponse findTutorByTimeAndDuration(@RequestBody TutorFindRequest request) {
-        return lessonSlotService.findTutorByTimeAndDuration(
-                new TutorFindDto(
-                        request.date(),
+    public TutorFindResponse findTutorByTimeAndlessonInterval(@ModelAttribute TutorFindRequest request) {
+        return lessonSlotService.findTutorByTimeAndLessonInterval(
+                new TutorFindCommand(
                         request.startAt(),
-                        request.duration()
+                        request.lessonInterval()
                 )
         );
     }

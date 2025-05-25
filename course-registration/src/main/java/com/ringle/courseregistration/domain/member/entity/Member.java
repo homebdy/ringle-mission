@@ -8,9 +8,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -28,14 +29,20 @@ public class Member {
     @Column(nullable = false)
     private Role role;
 
-    @Builder
-    public Member(Long id, String name, Role role) {
-        this.id = id;
+    public Member(String name, Role role) {
         this.name = name;
         this.role = role;
     }
 
-    public boolean isTutor() {
-        return role.equals(Role.TUTOR);
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final Member member = (Member) o;
+        return Objects.equals(id, member.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

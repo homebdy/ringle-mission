@@ -5,30 +5,25 @@ import com.ringle.courseregistration.domain.lesson.controller.dto.response.Lesso
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.TimeUnitFindResponse;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.TutorFindResponse;
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.TutorTimeUnitResponse;
-import com.ringle.courseregistration.domain.lesson.entity.Duration;
+import com.ringle.courseregistration.domain.lesson.entity.LessonInterval;
 import com.ringle.courseregistration.domain.lesson.entity.LessonSlot;
-import com.ringle.courseregistration.domain.lesson.entity.TimeUnit;
-import com.ringle.courseregistration.domain.lesson.exception.InvalidDateException;
-import com.ringle.courseregistration.domain.lesson.exception.LessonSlotAlreadyExist;
-import com.ringle.courseregistration.domain.lesson.exception.LessonSlotNotFound;
-import com.ringle.courseregistration.domain.lesson.exception.TimeUnitNotFoundException;
-import com.ringle.courseregistration.domain.lesson.mapper.LessonSlotMapper;
+import com.ringle.courseregistration.domain.lesson.exception.LessonSlotAlreadyExistException;
+import com.ringle.courseregistration.domain.lesson.exception.LessonSlotNotFoundException;
 import com.ringle.courseregistration.domain.lesson.repository.LessonSlotRepository;
-import com.ringle.courseregistration.domain.lesson.repository.TimeUnitRepository;
-import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateDto;
-import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteDto;
-import com.ringle.courseregistration.domain.lesson.service.dto.TimeUnitFindDto;
-import com.ringle.courseregistration.domain.lesson.service.dto.TutorFindDto;
-import com.ringle.courseregistration.domain.tutor.entity.Tutor;
-import com.ringle.courseregistration.domain.tutor.exception.TutorNotFoundException;
-import com.ringle.courseregistration.domain.tutor.repository.TutorRepository;
-import com.ringle.courseregistration.global.exception.ForbiddenException;
+import com.ringle.courseregistration.domain.lesson.service.dto.AvailableTimeFindCommand;
+import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotCreateCommand;
+import com.ringle.courseregistration.domain.lesson.service.dto.LessonSlotDeleteCommand;
+import com.ringle.courseregistration.domain.lesson.service.dto.TutorFindCommand;
+import com.ringle.courseregistration.domain.member.entity.Member;
+import com.ringle.courseregistration.domain.member.entity.Role;
+import com.ringle.courseregistration.domain.member.exception.MemberNotFoundException;
+import com.ringle.courseregistration.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -43,146 +38,139 @@ import java.util.stream.Collectors;
 public class LessonSlotService {
 
     private final LessonSlotRepository lessonSlotRepository;
-    private final TimeUnitRepository timeUnitRepository;
-    private final TutorRepository tutorRepository;
-    private final LessonSlotMapper lessonSlotMapper;
+    private final MemberRepository memberRepository;
+    private final Clock clock;
 
     @Transactional
-    public List<LessonSlotCreateResponse> save(LessonSlotCreateDto dto) {
-        final Tutor tutor = getTutor(dto.memberId());
+    public List<LessonSlotCreateResponse> save(final LessonSlotCreateCommand command) {
+        validateTutor(command.memberId());
 
-        return dto.slots().stream()
+        final Member member = memberRepository.getReferenceById(command.memberId());
+        return command.slots().stream()
                 .map(slot -> {
-                    final TimeUnit timeUnit = getTimeUnit(slot.startAt());
-                    validateDate(slot.date());
-                    validateLessonSlot(slot.date(), timeUnit, tutor.getId());
-                    final LessonSlot savedSlot
-                            = lessonSlotRepository.save(lessonSlotMapper.toLessonSlot(slot, timeUnit, tutor));
-                    return lessonSlotMapper.toLessonSlotCreateResponse(savedSlot);
-                })
+                    validateLessonSlot(slot.startAt(), command.memberId());
+                    return lessonSlotRepository.save(LessonSlot.of(slot.startAt(), member, clock));
+                }).map(this::toLessonSlotCreateResponse)
                 .toList();
     }
 
-    private Tutor getTutor(final Long memberId) {
-        return tutorRepository.findByMemberId(memberId)
-                .orElseThrow(TutorNotFoundException::new);
-    }
-
-    private TimeUnit getTimeUnit(final LocalTime time) {
-        return timeUnitRepository.findByStartAt(time)
-                .orElseThrow(TimeUnitNotFoundException::new);
-    }
-
-    private void validateDate(final LocalDate date) {
-        if (date.isBefore(LocalDate.now())) {
-            throw new InvalidDateException();
+    private void validateTutor(final Long memberId) {
+        if (!memberRepository.existsByIdAndRole(memberId, Role.TUTOR)) {
+            throw new MemberNotFoundException();
         }
     }
 
-    private void validateLessonSlot(final LocalDate date, final TimeUnit timeUnit, final Long tutorId) {
-        if (lessonSlotRepository.existsByDateAndTimeUnitAndTutorId(date, timeUnit, tutorId)) {
-            throw new LessonSlotAlreadyExist();
+    private void validateLessonSlot(final LocalDateTime startAt, final Long tutorId) {
+        if (lessonSlotRepository.existsByStartAtAndTutorId(startAt, tutorId)) {
+            throw new LessonSlotAlreadyExistException();
         }
     }
 
-    @Transactional
-    public void delete(final LessonSlotDeleteDto dto) {
-        final Tutor tutor = getTutor(dto.memberId());
-        final LessonSlot slot = lessonSlotRepository.findById(dto.lessonSlotId())
-                .orElseThrow(LessonSlotNotFound::new);
-        validateLessonSlot(slot, tutor);
-
-        slot.delete();
-    }
-
-    private void validateLessonSlot(final LessonSlot slot, final Tutor tutor) {
-        if (!slot.isSameTutor(tutor)) {
-            throw new ForbiddenException();
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public TimeUnitFindResponse findTimeUnitByDateAndLessonLength(final TimeUnitFindDto dto) {
-        List<LessonSlot> allSlots = lessonSlotRepository.findByDate(dto.date());
-        Map<Tutor, List<LessonSlot>> slotsByTutor = allSlots.stream()
-                .collect(Collectors.groupingBy(LessonSlot::getTutor));
-
-        Set<LocalTime> result = new HashSet<>();
-        for (Tutor tutor : slotsByTutor.keySet()) {
-            List<LessonSlot> sorted = slotsByTutor.get(tutor).stream()
-                    .sorted(Comparator.comparing(ls -> ls.getTimeUnit().getStartAt()))
-                    .toList();
-
-            if (dto.duration().equals(Duration.MINUTES_30)) {
-                result.addAll(getTimeUnitsFor30MinuteLesson(sorted));
-                continue;
-            }
-            result.addAll(getTimeUnitsFor60MinuteLesson(sorted));
-        }
-        return new TimeUnitFindResponse(dto.date(), result);
-    }
-
-    private Collection<LocalTime> getTimeUnitsFor30MinuteLesson(List<LessonSlot> sortedSlots) {
-        return sortedSlots.stream()
-                .map(LessonSlot::getTimeUnit)
-                .map(TimeUnit::getStartAt)
-                .toList();
-    }
-
-    private Collection<LocalTime> getTimeUnitsFor60MinuteLesson(List<LessonSlot> sortedSlots) {
-        List<TimeUnit> results = new ArrayList<>();
-        for (int i = 0; i < sortedSlots.size() - 1; i++) {
-            LessonSlot current = sortedSlots.get(i);
-            LessonSlot next = sortedSlots.get(i + 1);
-
-            if (current.getTimeUnit().getStartAt().plusMinutes(LessonConstant.LESSON_LENGTH).equals(next.getTimeUnit().getStartAt())) {
-                results.add(current.getTimeUnit());
-            }
-        }
-        return results.stream()
-                .map(TimeUnit::getStartAt)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public TutorFindResponse findTutorByTimeAndDuration(final TutorFindDto dto) {
-        List<LessonSlot> allSlots = lessonSlotRepository.findByDate(dto.date());
-        Map<Tutor, List<LessonSlot>> slotsByTutor = allSlots.stream()
-                .collect(Collectors.groupingBy(LessonSlot::getTutor));
-
-        List<TutorTimeUnitResponse> timeUnitResponses = slotsByTutor.entrySet().stream()
-                .map(entry -> createTutorTimeUnitResponse(entry.getKey(), entry.getValue(), dto))
-                .toList();
-
-        return new TutorFindResponse(dto.date(), timeUnitResponses);
-    }
-
-    private TutorTimeUnitResponse createTutorTimeUnitResponse(Tutor tutor, List<LessonSlot> slots, TutorFindDto dto) {
-        List<LessonSlot> filteredSlots = filterSlotsByTimeRange(slots, dto);
-        Set<LocalTime> availableTimes = getAvailableTimes(filteredSlots, dto.duration());
-        
-        return new TutorTimeUnitResponse(
-                tutor.getId(),
-                tutor.getMember().getName(),
-                availableTimes
+    private LessonSlotCreateResponse toLessonSlotCreateResponse(final LessonSlot slot) {
+        return new LessonSlotCreateResponse(
+                slot.getId(),
+                slot.getStartAt(),
+                slot.getTutor().getId(),
+                slot.isReserved()
         );
     }
 
-    private List<LessonSlot> filterSlotsByTimeRange(List<LessonSlot> slots, TutorFindDto dto) {
-        LocalTime startTime = dto.startAt().minusMinutes(dto.duration().getLessonLength()).minusMinutes(1);
-        LocalTime endTime = dto.startAt().plusMinutes(dto.duration().getLessonLength()).plusMinutes(1);
+    @Transactional
+    public void delete(final LessonSlotDeleteCommand command) {
+        validateTutor(command.memberId());
 
-        return slots.stream()
-                .filter(slot -> slot.getStartTime().isAfter(startTime) && 
-                        slot.getStartTime().isBefore(endTime))
-                .sorted(Comparator.comparing(ls -> ls.getTimeUnit().getStartAt()))
-                .toList();
+        final LessonSlot slot = lessonSlotRepository.findById(command.lessonSlotId())
+                .orElseThrow(LessonSlotNotFoundException::new);
+
+        slot.delete(command.memberId(), clock);
     }
 
-    private Set<LocalTime> getAvailableTimes(List<LessonSlot> slots, Duration duration) {
-        if (duration.equals(Duration.MINUTES_30)) {
-            return new HashSet<>(getTimeUnitsFor30MinuteLesson(slots));
+    // 날짜, 수업 길이 기준 수강 가능 시간대 조회
+    @Transactional(readOnly = true)
+    public TimeUnitFindResponse findTimeUnitByDateAndLessonLength(final AvailableTimeFindCommand command) {
+        final List<LessonSlot> allSlots = lessonSlotRepository.findAllByDate(false, command.date());
+
+        final Map<Member, List<LessonSlot>> slotsByTutor = allSlots.stream()
+                .collect(Collectors.groupingBy(LessonSlot::getTutor));
+
+        final Set<LocalDateTime> result = new HashSet<>();
+        for (Member tutor : slotsByTutor.keySet()) {
+            final List<LessonSlot> sorted = slotsByTutor.get(tutor).stream()
+                    .sorted(Comparator.comparing(LessonSlot::getStartAt))
+                    .toList();
+
+            final Collection<LocalDateTime> answer = getLessonTime(sorted, command.lessonInterval());
+            if (answer.isEmpty()) {
+                continue;
+            }
+            result.addAll(answer);
         }
-        return new HashSet<>(getTimeUnitsFor60MinuteLesson(slots));
+        return new TimeUnitFindResponse(result);
+    }
+
+    /**
+     * 주어진 슬롯 리스트에서 수업 시간(LessonInterval)에 맞춰 연속 수업을 들을 수 있는 시작 시간들을 반환한다.
+     *
+     * 예:
+     *   - 30분 수업: 연속된 슬롯 필요 없음 (1개만 있으면 됨)
+     *   - 60분 수업: 30분 슬롯 2개가 연속되어야 함
+     *   - 90분 수업: 30분 슬롯 3개가 연속되어야 함
+     *
+     * 로직 설명:
+     *   1. 전체 수업 길이를 30분 단위로 나눠서, 연속적으로 필요한 슬롯 수(continuousSlot)를 계산
+     *      - 60분 수업이면 continuousSlot = 1 (연속 1개 필요)
+     *      - 90분 수업이면 continuousSlot = 2 (연속 2개 필요)
+     *
+     *   2. 각 시작 슬롯을 기준으로, continuousSlot만큼 떨어진 슬롯의 시간이
+     *      현재 시간 + 전체 수업 시간과 일치하는지 확인
+     *      - 즉, 연속된 슬롯들이 존재하는지 검사
+     *
+     *   3. 조건에 맞으면 해당 시작 시간을 결과에 추가
+     */
+    private Collection<LocalDateTime> getLessonTime(final List<LessonSlot> slots, final LessonInterval lessonInterval) {
+        // 전체 수업 시간에 필요한 연속 슬롯 수 계산
+        final int continuousSlot = lessonInterval.getLessonLength() / LessonConstant.LESSON_LENGTH - 1;
+
+        final List<LocalDateTime> results = new ArrayList<>();
+
+        for (int i = 0; i < slots.size() - continuousSlot; i++) {
+            final LessonSlot current = slots.get(i);
+            final LessonSlot last = slots.get(i + continuousSlot);
+
+            // 시작 슬롯에서 전체 수업 시간만큼 더한 시간이 마지막 슬롯 시작 시간과 같아야 연속 수업이 가능
+            if (current.getStartAt().plusMinutes((long) LessonConstant.LESSON_LENGTH * continuousSlot).equals(last.getStartAt())) {
+                results.add(current.getStartAt());
+            }
+        }
+
+        return results;
+    }
+
+    @Transactional(readOnly = true)
+    public TutorFindResponse findTutorByTimeAndLessonInterval(final TutorFindCommand command) {
+        final LocalDateTime startAt = command.startAt().minusMinutes(command.lessonInterval().getLessonLength());
+        final LocalDateTime endAt = command.startAt().plusMinutes(command.lessonInterval().getLessonLength());
+
+        final List<LessonSlot> allSlots
+                = lessonSlotRepository.findAllByReservedAndStartAtIsBetween(false, startAt, endAt);
+        final Map<Member, List<LessonSlot>> slotsByTutor = allSlots.stream()
+                .collect(Collectors.groupingBy(LessonSlot::getTutor));
+
+        final List<TutorTimeUnitResponse> timeUnitResponses = slotsByTutor.entrySet().stream()
+                .map(entry -> createTutorTimeUnitResponse(entry.getKey(), entry.getValue(), command))
+                .filter(res -> !res.times().isEmpty())
+                .toList();
+
+        return new TutorFindResponse(timeUnitResponses);
+    }
+
+    private TutorTimeUnitResponse createTutorTimeUnitResponse(final Member tutor, final List<LessonSlot> slots, final TutorFindCommand command) {
+        final Collection<LocalDateTime> availableTimes = getLessonTime(slots, command.lessonInterval());
+
+        return new TutorTimeUnitResponse(
+                tutor.getId(),
+                tutor.getName(),
+                availableTimes
+        );
     }
 }

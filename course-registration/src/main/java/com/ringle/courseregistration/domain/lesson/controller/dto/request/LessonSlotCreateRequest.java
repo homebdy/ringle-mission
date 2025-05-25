@@ -1,10 +1,10 @@
 package com.ringle.courseregistration.domain.lesson.controller.dto.request;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.time.LocalDateTime;
 
 public record LessonSlotCreateRequest(
-        LocalDate date,
-        LocalTime startAt
+        @Schema(example = "2025-06-25T00:00:00", type = "string", description = "Date time") LocalDateTime startAt
 ) {
 }

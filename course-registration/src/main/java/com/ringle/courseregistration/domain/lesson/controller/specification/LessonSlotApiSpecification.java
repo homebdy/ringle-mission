@@ -30,5 +30,5 @@ public interface LessonSlotApiSpecification {
 
     @Tag(name = SwaggerTag.LESSON_SLOT_API)
     @Operation(summary = "날짜, 시간대, 수업 길이로 수업 시간대 조회")
-    TutorFindResponse findTutorByTimeAndDuration(@RequestBody TutorFindRequest request);
+    TutorFindResponse findTutorByTimeAndlessonInterval(@RequestBody TutorFindRequest request);
 }

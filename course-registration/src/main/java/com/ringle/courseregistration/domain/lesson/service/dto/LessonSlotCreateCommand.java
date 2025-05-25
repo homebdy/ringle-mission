@@ -4,7 +4,7 @@ import com.ringle.courseregistration.domain.lesson.controller.dto.request.Lesson
 
 import java.util.List;
 
-public record LessonSlotCreateDto(
+public record LessonSlotCreateCommand(
         Long memberId,
         List<LessonSlotCreateRequest> slots
 ) {

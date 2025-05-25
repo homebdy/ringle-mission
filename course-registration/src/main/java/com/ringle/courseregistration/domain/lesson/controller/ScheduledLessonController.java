@@ -4,7 +4,7 @@ import com.ringle.courseregistration.domain.lesson.controller.dto.request.Schedu
 import com.ringle.courseregistration.domain.lesson.controller.dto.response.ScheduledLessonFindResponse;
 import com.ringle.courseregistration.domain.lesson.controller.specification.ScheduledLessonApiSpecification;
 import com.ringle.courseregistration.domain.lesson.service.ScheduledLessonService;
-import com.ringle.courseregistration.domain.lesson.service.dto.ScheduleLessonCreateDto;
+import com.ringle.courseregistration.domain.lesson.service.dto.ScheduleLessonCreateCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,17 +28,16 @@ public class ScheduledLessonController implements ScheduledLessonApiSpecificatio
     @ResponseStatus(HttpStatus.CREATED)
     public void createScheduledLesson(@RequestBody ScheduledLessonCreateRequest request) {
         scheduledLessonService.createScheduledLesson(
-            new ScheduleLessonCreateDto(
+            new ScheduleLessonCreateCommand(
                     request.memberId(),
-                    request.date(),
                     request.startAt(),
-                    request.duration(),
+                    request.lessonInterval(),
                     request.tutorId()
             )
         );
     }
 
-    @GetMapping("/students/{memberId}")
+    @GetMapping("/members/{memberId}")
     @ResponseStatus(HttpStatus.OK)
     public Collection<ScheduledLessonFindResponse> findByMemberId(@PathVariable Long memberId) {
         return scheduledLessonService.findByMemberId(memberId);

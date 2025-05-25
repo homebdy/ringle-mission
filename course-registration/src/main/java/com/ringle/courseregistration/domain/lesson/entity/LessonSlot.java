@@ -1,69 +1,69 @@
 package com.ringle.courseregistration.domain.lesson.entity;
 
-import com.ringle.courseregistration.domain.tutor.entity.Tutor;
+import com.ringle.courseregistration.domain.lesson.constant.LessonConstant;
+import com.ringle.courseregistration.domain.lesson.exception.InvalidDateException;
+import com.ringle.courseregistration.domain.member.entity.Member;
+import com.ringle.courseregistration.global.exception.ForbiddenException;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
-import java.time.LocalDate;
+import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLDelete(sql = "UPDATE lesson_slot SET delete_at = true WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class LessonSlot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate date;
+    private LocalDateTime startAt;
 
-    @ManyToOne
-    private TimeUnit timeUnit;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Member tutor;
 
-    @ManyToOne
-    private Tutor tutor;
+    private boolean reserved = false;
 
-    private boolean isAvailable;
+    private LocalDateTime deletedAt;
 
-    private LocalDateTime deleteAt;
-
-    @Builder
-    public LessonSlot(Long id, LocalDate date, TimeUnit timeUnit, Tutor tutor, boolean isAvailable) {
-        this.id = id;
-        this.date = date;
-        this.timeUnit = timeUnit;
+    private LessonSlot(LocalDateTime startAt, Member tutor) {
+        this.startAt = startAt;
         this.tutor = tutor;
-        this.isAvailable = isAvailable;
     }
 
-    public boolean isSameTutor(Tutor tutor) {
-        return this.tutor.equals(tutor);
+    public static LessonSlot of(LocalDateTime startAt, Member tutor, Clock clock) {
+        validateStartAt(startAt, clock);
+        return new LessonSlot(startAt, tutor);
     }
 
-    public void delete() {
-        this.deleteAt = LocalDateTime.now();
+    private static void validateStartAt(LocalDateTime startAt, Clock clock) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        if (startAt.isBefore(now) || startAt.getMinute() % LessonConstant.LESSON_LENGTH != 0) {
+            throw new InvalidDateException();
+        }
     }
 
-    public LocalTime getStartTime() {
-        return timeUnit.getStartAt();
+    public void delete(Long memberId, Clock clock) {
+        if (!tutor.getId().equals(memberId)) {
+            throw new ForbiddenException();
+        }
+        this.deletedAt = LocalDateTime.now(clock);
     }
 
-    public void register() {
-        this.isAvailable = true;
-    }
-
-    public boolean isRegistered() {
-        return isAvailable;
+    public void reserve() {
+        this.reserved = true;
     }
 }

@@ -5,6 +5,6 @@ import com.ringle.courseregistration.global.exception.BadRequestException;
 public class InvalidDateException extends BadRequestException {
 
     public InvalidDateException() {
-        super("오늘보다 이전 날짜의 수업은 생성할 수 없습니다.");
+        super("유효하지 않은 시간 단위입니다.");
     }
 }

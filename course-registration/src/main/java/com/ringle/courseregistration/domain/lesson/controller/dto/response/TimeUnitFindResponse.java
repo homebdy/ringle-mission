@@ -1,8 +1,7 @@
 package com.ringle.courseregistration.domain.lesson.controller.dto.response;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.Collection;
 
-public record TimeUnitFindResponse(LocalDate date, Collection<LocalTime> availableTimeUnits) {
+public record TimeUnitFindResponse(Collection<LocalDateTime> availableTimeUnits) {
 }

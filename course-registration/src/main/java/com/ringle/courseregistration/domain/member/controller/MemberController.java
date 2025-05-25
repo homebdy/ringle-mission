@@ -4,7 +4,7 @@ import com.ringle.courseregistration.domain.member.controller.dto.request.Member
 import com.ringle.courseregistration.domain.member.controller.dto.response.MemberCreateResponse;
 import com.ringle.courseregistration.domain.member.controller.specification.MemberApiSpecification;
 import com.ringle.courseregistration.domain.member.service.MemberService;
-import com.ringle.courseregistration.domain.member.service.dto.MemberCreateDto;
+import com.ringle.courseregistration.domain.member.service.dto.MemberCreateCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,7 +24,7 @@ public class MemberController implements MemberApiSpecification {
     @ResponseStatus(HttpStatus.CREATED)
     public MemberCreateResponse create(@RequestBody final MemberCreateRequest request) {
         return memberService.save(
-                new MemberCreateDto(request.name(), request.role())
+                new MemberCreateCommand(request.name(), request.role())
         );
     }
 }
