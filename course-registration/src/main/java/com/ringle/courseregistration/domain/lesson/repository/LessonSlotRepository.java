@@ -1,7 +1,9 @@
 package com.ringle.courseregistration.domain.lesson.repository;
 
 import com.ringle.courseregistration.domain.lesson.entity.LessonSlot;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Component;
@@ -9,15 +11,13 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public interface LessonSlotRepository extends JpaRepository<LessonSlot, Long> {
 
     boolean existsByStartAtAndTutorId(LocalDateTime startAt, Long tutorId);
 
-    Optional<LessonSlot> findByStartAtAndTutorId(LocalDateTime startAt, Long tutorId);
-
+    @Lock(LockModeType.OPTIMISTIC)
     List<LessonSlot> findAllByTutorIdAndReservedAndStartAtIsBetween(Long tutorId, boolean reserved, LocalDateTime startAt, LocalDateTime endAt);
 
     List<LessonSlot> findAllByReservedAndStartAtIsBetween(boolean reserved, LocalDateTime startAt, LocalDateTime endAt);

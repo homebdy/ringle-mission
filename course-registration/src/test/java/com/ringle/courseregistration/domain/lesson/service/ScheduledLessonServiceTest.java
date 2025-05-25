@@ -7,6 +7,7 @@ import com.ringle.courseregistration.domain.lesson.entity.ScheduledLesson;
 import com.ringle.courseregistration.domain.lesson.repository.LessonSlotRepository;
 import com.ringle.courseregistration.domain.lesson.repository.ScheduledLessonRepository;
 import com.ringle.courseregistration.domain.lesson.service.dto.ScheduleLessonCreateCommand;
+import com.ringle.courseregistration.domain.lesson.service.transactional.ScheduledLessonTransactionalService;
 import com.ringle.courseregistration.domain.member.entity.Member;
 import com.ringle.courseregistration.domain.member.entity.Role;
 import com.ringle.courseregistration.domain.member.exception.MemberNotFoundException;
@@ -49,13 +50,16 @@ class ScheduledLessonServiceTest {
 
     private ScheduledLessonService scheduledLessonService;
 
+    private ScheduledLessonTransactionalService scheduledLessonTransactionalService;
+
     private Member student;
     private Member tutor;
 
     @BeforeEach
     void setUp() {
         clock = Clock.systemUTC();
-        scheduledLessonService = new ScheduledLessonService(scheduledLessonRepository, lessonSlotRepository, memberRepository, clock);
+        scheduledLessonTransactionalService = new ScheduledLessonTransactionalService(scheduledLessonRepository, lessonSlotRepository, memberRepository);
+        scheduledLessonService = new ScheduledLessonService(scheduledLessonRepository, memberRepository, clock, scheduledLessonTransactionalService);
 
         student = new Member("st", Role.STUDENT);
         tutor = new Member("tutor", Role.TUTOR);
