@@ -7,6 +7,6 @@ import java.time.LocalDateTime;
 
 public record TutorFindRequest(
         @Schema(example = "2025-06-25T00:00:00", type = "string", description = "Date time") LocalDateTime startAt,
-        @Schema(example = "MINUTES_30") LessonInterval lessonInterval
+        @Schema(example = "MINUTES_60") LessonInterval lessonInterval
 ) {
 }

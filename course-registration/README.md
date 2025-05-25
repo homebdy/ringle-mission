@@ -9,19 +9,29 @@
 
 ## 사용 기술
 
-Java 17, Spring Boot 3.5.0, MySQL 8.0, Docker, Swagger, JPA
+Java 17, Spring Boot 3.5.0, MySQL, Docker, Swagger, JPA
 
 ## 실행 방법
 
-1. 도커를 통해 MySQL 8.0 및 기타 의존성을 포함한 환경을 실행
-2. 아래 명령어로 애플리케이션을 빌드하고 실행
-
+### 스크립트 실행 방식
+1. 스크립트 실행 권한 설정
+    ```
+    chmod +x run.sh
+    ```
+2. 스크립트 실행
+    ```
+    ./run.sh
+    ```
+   
+### 애플리케이션 실행 방식
+1. 도커 실행
     ```
     docker-compose up
     ```
+2. 애플리케이션 실행
 
-3. 기본 설정은 `application.yml` 또는 환경 변수로 관리하며, 데이터베이스 연결 정보 등을 포함
-4. 애플리케이션이 실행된 후, [http://localhost:8080/api/swagger-ui/index.html](http://localhost:8080/api/swagger-ui/index.html#/) 에서 API 문서 확인 가능
+
+애플리케이션이 실행된 후, Swagger([링크](http://localhost:8080/api/swagger-ui/index.html#/)) 에서 API 문서 확인 가능
 
 ---
 
