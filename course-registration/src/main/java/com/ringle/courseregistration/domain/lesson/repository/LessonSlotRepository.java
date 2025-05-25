@@ -15,12 +15,13 @@ import java.util.Optional;
 public interface LessonSlotRepository extends JpaRepository<LessonSlot, Long> {
 
     boolean existsByStartAtAndTutorId(LocalDateTime startAt, Long tutorId);
+
     Optional<LessonSlot> findByStartAtAndTutorId(LocalDateTime startAt, Long tutorId);
+
     List<LessonSlot> findAllByTutorIdAndReservedAndStartAtIsBetween(Long tutorId, boolean reserved, LocalDateTime startAt, LocalDateTime endAt);
+
     List<LessonSlot> findAllByReservedAndStartAtIsBetween(boolean reserved, LocalDateTime startAt, LocalDateTime endAt);
 
     @Query("SELECT l FROM LessonSlot l WHERE l.reserved = :reserved AND FUNCTION('date', l.startAt) = :date")
     List<LessonSlot> findAllByDate(@Param("reserved") boolean reserved, @Param("date") LocalDate date);
-
-
 }

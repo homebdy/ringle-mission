@@ -28,12 +28,12 @@ public class ScheduledLessonController implements ScheduledLessonApiSpecificatio
     @ResponseStatus(HttpStatus.CREATED)
     public void createScheduledLesson(@RequestBody ScheduledLessonCreateRequest request) {
         scheduledLessonService.createScheduledLesson(
-            new ScheduleLessonCreateCommand(
-                    request.memberId(),
-                    request.startAt(),
-                    request.lessonInterval(),
-                    request.tutorId()
-            )
+                new ScheduleLessonCreateCommand(
+                        request.memberId(),
+                        request.startAt(),
+                        request.lessonInterval(),
+                        request.tutorId()
+                )
         );
     }
 

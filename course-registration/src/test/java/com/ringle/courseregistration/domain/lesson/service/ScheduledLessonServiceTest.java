@@ -63,6 +63,12 @@ class ScheduledLessonServiceTest {
         ReflectionTestUtils.setField(tutor, "id", 2L);
     }
 
+    private LessonSlot lessonSlot(Member tutor, LocalDateTime time, Long id) {
+        LessonSlot slot = LessonSlot.of(time, tutor, Clock.systemUTC());
+        ReflectionTestUtils.setField(slot, "id", id);
+        return slot;
+    }
+
     @Nested
     @DisplayName("createScheduledLesson 메서드")
     class CreateScheduledLesson {
@@ -153,11 +159,5 @@ class ScheduledLessonServiceTest {
             assertThatThrownBy(() -> scheduledLessonService.findByMemberId(1L))
                     .isInstanceOf(MemberNotFoundException.class);
         }
-    }
-
-    private LessonSlot lessonSlot(Member tutor, LocalDateTime time, Long id) {
-        LessonSlot slot = LessonSlot.of(time, tutor, Clock.systemUTC());
-        ReflectionTestUtils.setField(slot, "id", id);
-        return slot;
     }
 }

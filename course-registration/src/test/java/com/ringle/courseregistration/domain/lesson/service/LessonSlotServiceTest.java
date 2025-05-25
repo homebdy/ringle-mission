@@ -44,14 +44,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class LessonSlotServiceTest {
 
+    private final Clock clock = Clock.systemUTC();
     @Mock
     private LessonSlotRepository lessonSlotRepository;
-
     @Mock
     private MemberRepository memberRepository;
-
-    private final Clock clock = Clock.systemUTC();
-
     private LessonSlotService lessonSlotService;
 
     private Member tutor;
@@ -61,6 +58,12 @@ class LessonSlotServiceTest {
         lessonSlotService = new LessonSlotService(lessonSlotRepository, memberRepository, clock);
         tutor = new Member("tutor", Role.TUTOR);
         ReflectionTestUtils.setField(tutor, "id", 1L);
+    }
+
+    private LessonSlot lessonSlot(Member tutor, LocalDateTime time, Long id) {
+        LessonSlot slot = LessonSlot.of(time, tutor, clock);
+        ReflectionTestUtils.setField(slot, "id", id);
+        return slot;
     }
 
     @Nested
@@ -279,12 +282,5 @@ class LessonSlotServiceTest {
             // then
             assertThat(response.timeUnitResponses()).hasSize(2);
         }
-    }
-
-
-    private LessonSlot lessonSlot(Member tutor, LocalDateTime time, Long id) {
-        LessonSlot slot = LessonSlot.of(time, tutor, clock);
-        ReflectionTestUtils.setField(slot, "id", id);
-        return slot;
     }
 }
