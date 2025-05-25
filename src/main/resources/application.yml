@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: course-registration
+    name: ringle-mission
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
